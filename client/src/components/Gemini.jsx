@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Gemini = () => {
   const [prompt, setPrompt] = useState("");
@@ -63,7 +64,9 @@ const Gemini = () => {
         }`}
       >
         {/* Header */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           className={`p-4 text-center font-bold border-b ${
             theme === "light"
               ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 border-blue-200"
@@ -71,59 +74,76 @@ const Gemini = () => {
           }`}
         >
           🧠 Gemini Chat
-        </div>
+        </motion.div>
 
         {/* Chat area */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4">
           {messages.length === 0 && !loading && (
-            <div
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
               className={`text-center text-sm font-medium mt-10 ${
                 theme === "light" ? "text-gray-600" : "text-gray-400"
               }`}
             >
               💬 Start a conversation with Gemini...
-            </div>
+            </motion.div>
           )}
 
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${
-                msg.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm shadow-md font-medium ${
-                  msg.role === "user"
-                    ? theme === "light"
-                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
-                      : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white"
-                    : theme === "light"
-                    ? "bg-blue-50 text-gray-900 border border-blue-200"
-                    : "bg-slate-800 text-gray-200 border border-slate-700"
+          <AnimatePresence>
+            {messages.map((msg, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className={`flex ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                {msg.text}
-              </div>
-            </div>
-          ))}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm shadow-md font-medium ${
+                    msg.role === "user"
+                      ? theme === "light"
+                        ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                        : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white"
+                      : theme === "light"
+                      ? "bg-blue-50 text-gray-900 border border-blue-200"
+                      : "bg-slate-800 text-gray-200 border border-slate-700"
+                  }`}
+                >
+                  {msg.text}
+                </motion.div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
           {/* Loading message (AI typing) */}
-          {loading && (
-            <div className="flex justify-start">
-              <div
-                className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-md flex gap-1 items-center ${
-                  theme === "light"
-                    ? "bg-blue-50 text-gray-700 border border-blue-200"
-                    : "bg-slate-800 text-gray-300 border border-slate-700"
-                }`}
+          <AnimatePresence>
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex justify-start"
               >
-                <span className="animate-bounce">●</span>
-                <span className="animate-bounce delay-150">●</span>
-                <span className="animate-bounce delay-300">●</span>
-              </div>
-            </div>
-          )}
+                <div
+                  className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-md flex gap-1 items-center ${
+                    theme === "light"
+                      ? "bg-blue-50 text-gray-700 border border-blue-200"
+                      : "bg-slate-800 text-gray-300 border border-slate-700"
+                  }`}
+                >
+                  <span className="animate-bounce">●</span>
+                  <span className="animate-bounce delay-150">●</span>
+                  <span className="animate-bounce delay-300">●</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div ref={chatEndRef} />
         </div>
@@ -145,13 +165,15 @@ const Gemini = () => {
                 : "border border-slate-700 bg-slate-800 focus:ring-blue-500 text-gray-200 placeholder-gray-400"
             }`}
           />
-          <button
+          <motion.button
             type="submit"
             disabled={loading}
+            whileHover={!loading ? { scale: 1.05, y: -2 } : {}}
+            whileTap={!loading ? { scale: 0.95 } : {}}
             className={`px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-md ${
               loading
                 ? "opacity-70 cursor-not-allowed"
-                : "hover:scale-[1.05] active:scale-95 hover:shadow-lg"
+                : "hover:shadow-lg"
             } ${
               theme === "light"
                 ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white hover:from-blue-600 hover:to-emerald-600"
@@ -159,7 +181,7 @@ const Gemini = () => {
             }`}
           >
             {loading ? "..." : "Send"}
-          </button>
+          </motion.button>
         </form>
 
         {/* Error */}

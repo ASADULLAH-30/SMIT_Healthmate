@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useTheme } from "../context/ThemeContext"; // ✅ theme hook
+import { useTheme } from "../context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const GeminiPDF = () => {
   const [file, setFile] = useState(null);
@@ -39,27 +40,47 @@ const GeminiPDF = () => {
           : "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950"
       }`}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         className={`rounded-2xl shadow-2xl w-full max-w-lg p-8 border transition-all duration-300 ${
           theme === "light"
             ? "bg-white border-blue-200"
             : "bg-slate-900 border-slate-800"
         }`}
       >
-        <h2
+        <motion.h2
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className={`text-2xl font-bold mb-6 flex items-center justify-center gap-2 transition-colors ${
             theme === "light" 
               ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600" 
               : "text-blue-400"
           }`}
         >
-          <span>🩺</span> Gemini Medical PDF Assistant
-        </h2>
+          <motion.span
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
+            🩺
+          </motion.span>{" "}
+          Gemini Medical PDF Assistant
+        </motion.h2>
 
         {/* Upload Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <motion.form
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          onSubmit={handleSubmit}
+          className="space-y-4"
+        >
           {/* File Upload */}
-          <label
+          <motion.label
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer transition-all ${
               theme === "light"
                 ? "border-blue-300 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-100/50"
@@ -91,7 +112,7 @@ const GeminiPDF = () => {
                 "Click or drop a PDF file here"
               )}
             </p>
-          </label>
+          </motion.label>
 
           {/* Prompt Input */}
           <textarea
@@ -107,13 +128,15 @@ const GeminiPDF = () => {
           />
 
           {/* Submit Button */}
-          <button
+          <motion.button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-lg font-bold transition-all duration-200 shadow-md ${
+            whileHover={!loading ? { scale: 1.02, y: -2 } : {}}
+            whileTap={!loading ? { scale: 0.95 } : {}}
+            className={`w-full py-3 rounded-xl font-bold transition-all duration-200 shadow-md ${
               loading
                 ? "opacity-70 cursor-not-allowed"
-                : "hover:scale-[1.02] active:scale-95 hover:shadow-lg"
+                : "hover:shadow-lg"
             } ${
               theme === "light"
                 ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white hover:from-blue-600 hover:to-emerald-600"
@@ -121,18 +144,23 @@ const GeminiPDF = () => {
             }`}
           >
             {loading ? "Analyzing your PDF..." : "Upload & Ask Gemini"}
-          </button>
-        </form>
+          </motion.button>
+        </motion.form>
 
         {/* AI Response */}
-        {response && (
-          <div
-            className={`mt-6 rounded-xl p-4 border max-h-80 overflow-auto transition-colors ${
-              theme === "light"
-                ? "bg-blue-50 border-blue-200"
-                : "bg-slate-800 border-slate-700"
-            }`}
-          >
+        <AnimatePresence>
+          {response && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ duration: 0.4 }}
+              className={`mt-6 rounded-xl p-4 border max-h-80 overflow-auto transition-colors ${
+                theme === "light"
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-slate-800 border-slate-700"
+              }`}
+            >
             <h3
               className={`font-bold mb-2 ${
                 theme === "light" 
@@ -142,16 +170,20 @@ const GeminiPDF = () => {
             >
               🧠 Gemini’s Medical Summary:
             </h3>
-            <pre
-              className={`whitespace-pre-wrap text-sm leading-relaxed font-medium ${
-                theme === "light" ? "text-gray-900" : "text-gray-200"
-              }`}
-            >
-              {response}
-            </pre>
-          </div>
-        )}
-      </div>
+              <motion.pre
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className={`whitespace-pre-wrap text-sm leading-relaxed font-medium ${
+                  theme === "light" ? "text-gray-900" : "text-gray-200"
+                }`}
+              >
+                {response}
+              </motion.pre>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 };

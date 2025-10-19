@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { ToastContainer } from "react-toastify";
 import AuthForm from "./pages/AuthForm";
+import LandingPage from "./pages/LandingPage";
 import { useTheme } from "./context/ThemeContext";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -28,7 +29,8 @@ export default function App() {
     >
       <Router>
         <Routes>
-          <Route path="/" element={<GoogleWrapper />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<GoogleWrapper />} />
           <Route
             path="/home"
             element={

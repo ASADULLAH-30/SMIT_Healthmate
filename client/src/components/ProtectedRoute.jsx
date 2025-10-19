@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }) => {
         setUser(res.data.user);
       } catch (err) {
         console.error("User not authenticated", err);
-        navigate("/"); // Redirect to login if not authenticated
+        navigate("/auth"); // Redirect to login if not authenticated
       }
     };
 

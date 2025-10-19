@@ -6,6 +6,7 @@ import GeminiPdf from "../components/GeminiPdf.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTheme } from "../context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const HomePage = () => {
   const [user, setUser] = useState(null);
@@ -23,7 +24,7 @@ const HomePage = () => {
         setUser(res.data.user);
       } catch (err) {
         console.error("User not authenticated", err);
-        navigate("/");
+        navigate("/auth");
       }
     };
     fetchUser();
@@ -37,7 +38,7 @@ const HomePage = () => {
         { withCredentials: true }
       );
       toast.success("User logged out successfully.");
-      navigate("/");
+      navigate("/auth");
     } catch (err) {
       console.error("Error logging out", err);
       toast.error("Logout failed");
@@ -53,16 +54,22 @@ const HomePage = () => {
       }`}
     >
       {/* 🌐 Navbar */}
-      <nav
+      <motion.nav
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className={`sticky top-0 z-50 backdrop-blur-lg shadow-lg px-6 py-4 flex justify-between items-center border-b transition-all ${
           theme === "light"
             ? "bg-white/80 border-blue-200"
             : "bg-slate-900/80 border-slate-700"
         }`}
       >
-        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent tracking-tight">
+        <motion.h1
+          whileHover={{ scale: 1.05 }}
+          className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent tracking-tight cursor-pointer"
+        >
           🩺 HealthMate AI
-        </h1>
+        </motion.h1>
 
         {user && (
           <div className="flex items-center gap-4">
@@ -73,18 +80,25 @@ const HomePage = () => {
             >
               👋 {user.name}
             </p>
-            <button
+            <motion.button
               onClick={logoutUser}
-              className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white px-5 py-2 rounded-xl font-semibold hover:from-blue-600 hover:to-emerald-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white px-5 py-2 rounded-xl font-semibold hover:from-blue-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg"
             >
               Logout
-            </button>
+            </motion.button>
           </div>
         )}
-      </nav>
+      </motion.nav>
 
       {/* 🧭 Tabs */}
-      <div className="flex justify-center mt-35 mb-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="flex justify-center mt-35 mb-4"
+      >
         <div
           className={`flex gap-3 p-1.5 rounded-full shadow-md ${
             theme === "light"
@@ -92,10 +106,15 @@ const HomePage = () => {
               : "bg-slate-800 border border-slate-700"
           }`}
         >
-          {["chat", "pdf"].map((tab) => (
-            <button
+          {["chat", "pdf"].map((tab, index) => (
+            <motion.button
               key={tab}
               onClick={() => setActiveTab(tab)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + index * 0.1 }}
               className={`px-6 py-2.5 rounded-full text-sm sm:text-base font-bold capitalize transition-all ${
                 activeTab === tab
                   ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-lg"
@@ -105,14 +124,17 @@ const HomePage = () => {
               }`}
             >
               {tab === "chat" ? "💬 Chat Assistant" : "📄 PDF Analyzer"}
-            </button>
+            </motion.button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* 🌟 Main Container */}
       <main className="w-full flex-grow flex justify-center items-center px-4 sm:px-8 py-8">
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
           className={`relative w-full h-[85vh] rounded-3xl shadow-2xl overflow-hidden border transition-all duration-300 ${
             theme === "light"
               ? "bg-white/95 border-blue-200"
@@ -164,10 +186,32 @@ const HomePage = () => {
                 theme === "light" ? "bg-white" : "bg-slate-900"
               }`}
             >
-              {activeTab === "chat" ? <Gemini /> : <GeminiPdf />}
+              <AnimatePresence mode="wait">
+                {activeTab === "chat" ? (
+                  <motion.div
+                    key="chat"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Gemini />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="pdf"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <GeminiPdf />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
-        </div>
+        </motion.div>
       </main>
 
       {/* Footer */}
