@@ -10,9 +10,10 @@ const pdfParse = pdfModule.default || pdfModule; // ✅ handles both CJS + ESM e
 
 import multer from "multer";
 import fs from "fs";
-import { GoogleGenAI } from "@google/genai"; // ✅ correct new import
-//import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import authRoutes from "./routes/authRoutes.js";
+import pdfRoutes from "./routes/pdfRoutes.js";
+import familyRoutes from "./routes/familyRoutes.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -53,52 +54,97 @@ if (!MONGODB_URI) {
     });
 }
 
-// Initialize Gemini 2.5 client
-const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_API_KEY,
-});
+// Initialize Gemini client
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+if (!GOOGLE_API_KEY) {
+  console.error("⚠️  WARNING: GOOGLE_API_KEY is not set in .env file");
+  console.log("   Gemini AI features will not work without this key");
+}
+const genAI = GOOGLE_API_KEY ? new GoogleGenerativeAI(GOOGLE_API_KEY) : null;
 
 // Gemini test route// backend/server.js (snippet)
 const upload = multer({ storage: multer.memoryStorage() }); // in-memory buffer
 
 app.post("/api/gemini/pdf", upload.single("file"), async (req, res) => {
   try {
-    // safe import that handles both CJS and ESM shapes
+    // Check if Gemini is configured
+    if (!genAI) {
+      return res.status(500).json({
+        error: "Gemini API not configured",
+        details: "GOOGLE_API_KEY is missing in environment variables",
+      });
+    }
 
     // prompt from form-data
-    const prompt = req.body?.prompt || "Summarize this PDF as a doctor";
+    const prompt = req.body?.prompt || "Analyze this medical document and provide a detailed summary including key findings, diagnoses, and recommendations.";
 
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({ error: "No PDF file uploaded" });
     }
 
-    // parse PDF buffer
-    const pdfData = await pdfParse(req.file.buffer);
-    const extractedText = pdfData.text || "";
+    console.log("📄 Processing PDF:", req.file.originalname);
 
-    // limit size to avoid sending huge prompt (adjust as needed)
-    const chunk = extractedText.slice(0, 30000); // ~30k chars
-    const fullPrompt = `${prompt}\n\nPDF CONTENT:\n${chunk}`;
+    let extractedText = "";
+    
+    try {
+      // Try to parse PDF buffer for text
+      const pdfData = await pdfParse(req.file.buffer);
+      extractedText = pdfData.text || "";
+      
+      if (extractedText.trim()) {
+        console.log("✅ Extracted", extractedText.length, "characters from PDF");
+      }
+    } catch (parseError) {
+      console.log("⚠️ Text extraction failed:", parseError.message);
+    }
 
-    // call Gemini (your ai client variable `ai` already set up)
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: fullPrompt,
-    });
+    console.log("🤖 Calling Gemini 2.0 Flash...");
 
-    // return the text (support multiple SDK shapes)
-    const text =
-      response?.text ||
-      response?.output_text ||
-      response?.response?.text ||
-      response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response";
-    res.json({ text });
+    // If we have text, use text-based analysis
+    if (extractedText.trim()) {
+      const chunk = extractedText.slice(0, 30000); // ~30k chars
+      const fullPrompt = `${prompt}\n\nPDF CONTENT:\n${chunk}`;
+
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log("✅ Gemini response received:", text.substring(0, 100) + "...");
+      res.json({ text });
+    } else {
+      // No text found - try multimodal approach with PDF as document
+      console.log("📸 No text found - using multimodal analysis...");
+      
+      // Convert PDF buffer to base64
+      const base64Data = req.file.buffer.toString('base64');
+      
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: "application/pdf"
+          }
+        },
+        prompt
+      ]);
+      
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log("✅ Gemini multimodal response received:", text.substring(0, 100) + "...");
+      res.json({ 
+        text,
+        note: "This PDF was analyzed using image recognition as it contains no extractable text."
+      });
+    }
   } catch (error) {
-    console.error("Gemini PDF error:", error);
+    console.error("❌ Gemini PDF error:", error);
     res.status(500).json({
-      error: "Something went wrong",
-      details: error.message,
+      error: "Failed to analyze PDF",
+      details: error.message || "Unknown error occurred",
     });
   }
 });
@@ -106,29 +152,42 @@ app.post("/api/gemini/pdf", upload.single("file"), async (req, res) => {
 // Simple text-based Gemini chat route
 app.post("/api/gemini", async (req, res) => {
   try {
+    // Check if Gemini is configured
+    if (!genAI) {
+      return res.status(500).json({
+        error: "Gemini API not configured",
+        details: "GOOGLE_API_KEY is missing in environment variables",
+      });
+    }
+
     const { prompt } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    console.log("💬 Gemini 2.0 chat request:", prompt.substring(0, 50) + "...");
 
-    // Gemini SDK may return response.text or response.output_text depending on version
-    res.json({ text: response.text || response.output_text || "No response" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log("✅ Gemini chat response:", text.substring(0, 100) + "...");
+    
+    res.json({ text });
   } catch (error) {
-    console.error("Gemini chat error:", error);
+    console.error("❌ Gemini chat error:", error);
     res.status(500).json({
-      error: "Something went wrong",
-      details: error.message,
+      error: "Failed to get AI response",
+      details: error.message || "Unknown error occurred",
     });
   }
 });
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/pdf", pdfRoutes);
+app.use("/api/family", familyRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is running.");

@@ -1,0 +1,27 @@
+===========================================
+COPY THESE LINES TO: backend/.env
+===========================================
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=dscivcykv
+CLOUDINARY_API_KEY=696983266282494
+CLOUDINARY_API_SECRET=ImSzOYAnM4nmD7Wb-AK_oByPD38
+CLOUDINARY_URL=cloudinary://696983266282494:ImSzOYAnM4nmD7Wb-AK_oByPD38@dscivcykv
+
+===========================================
+INSTRUCTIONS:
+===========================================
+
+1. Open: backend/.env
+2. Add the lines above to the file
+3. Save the file
+4. Run: npm install (in backend folder)
+5. Restart backend: npm run dev
+
+You should then see:
+✅ Cloudinary Configuration:
+   Cloud Name: ✅ Present
+   API Key: ✅ Present
+   API Secret: ✅ Present
+
+===========================================

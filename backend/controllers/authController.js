@@ -19,10 +19,10 @@ export const registerUser = async (req, res) => {
           code: "PASSWORD_NOT_SET",
           msg: "Password not set for this account.",
         });
-        return res
-          .status(400)
-          .json({ success: false, msg: "User already exists" });
       }
+      return res
+        .status(400)
+        .json({ success: false, msg: "User already exists" });
     }
 
     const salt = await bcrypt.genSalt(10);
